@@ -1,40 +1,56 @@
 # utils.py
 import mysql.connector
+import os
 import logging
 from datetime import datetime
+import os
+from urllib.parse import urlparse
+
 
 # Database configurations
 db_config_proj = {
-    "host": "10.0.116.125",
-    "user": "cs432g16",
-    "password": "LbNXp7Tz",
-    "database": "cs432g16"
+     "host": os.environ.get("DB_HOST"),
+    "user": os.environ.get("DB_USER"),
+    "password": os.environ.get("DB_PASSWORD"),
+    "database": os.environ.get("DB_NAME"),
+    "port": int(os.environ.get("DB_PORT"))
 }
 
 db_config_cism = {
-    "host": "10.0.116.125",
-    "user": "cs432g16",
-    "password": "LbNXp7Tz",
-    "database": "cs432cims"
+    "host": os.environ.get("DB_HOST"),
+    "user": os.environ.get("DB_USER"),
+    "password": os.environ.get("DB_PASSWORD"),
+    "database": os.environ.get("DB_NAME"),
+    "port": int(os.environ.get("DB_PORT"))
 }
+
 
 import mysql.connector
 
-def get_db_connection(cims=False):
+def get_db_connection(cims=True):
     if cims:
+        db_url = os.getenv("DATABASE_URL")  # This will be set in Render
+        if not db_url:
+            raise Exception("DATABASE_URL not found in environment variables")
+
+        result = urlparse(db_url)
+
         return mysql.connector.connect(
-            host='10.0.116.125',
-            user='cs432g16',
-            password='LbNXp7Tz',
-            database='cs432g16'
+            host=result.hostname,
+            port=result.port,
+            user=result.username,
+            password=result.password,
+            database=result.path[1:]  # Skip leading slash in '/dbname'
         )
     else:
+        # (Optional) If you still use your local or second project DB
         return mysql.connector.connect(
-            host='10.0.116.125',
-            user='cs432g16',
-            password='LbNXp7Tz',
-            database='cs432cims'
+            host="10.0.116.125",
+            user="cs432g16",
+            password="LbNXp7Tz",
+            database="cs432g16"
         )
+
 
 
 def validate_session(session_token):
