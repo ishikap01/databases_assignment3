@@ -11,6 +11,8 @@ import ShowBankDetails
 import ShowAlumni
 import ShowStats
 from utils import validate_session,get_db_connection,log_change
+import os
+from urllib.parse import urlparse
 
 
 app = Flask(__name__)
@@ -26,25 +28,48 @@ logging.basicConfig(
 
 # Database Configuration
 db_config_proj = {
-    "host": "10.0.116.125",
-    "user": "cs432g16",
-    "password": "LbNXp7Tz",
-    "database": "cs432g16"
+     "host": os.environ.get("DB_HOST"),
+    "user": os.environ.get("DB_USER"),
+    "password": os.environ.get("DB_PASSWORD"),
+    "database": os.environ.get("DB_NAME"),
+    "port": int(os.environ.get("DB_PORT"))
 }
+
+# import os
 
 db_config_cism = {
-    "host": "10.0.116.125",
-    "user": "cs432g16", 
-    "password": "LbNXp7Tz",
-    "database": "cs432cims"
+    "host": os.environ.get("DB_HOST"),
+    "user": os.environ.get("DB_USER"),
+    "password": os.environ.get("DB_PASSWORD"),
+    "database": os.environ.get("DB_NAME"),
+    "port": int(os.environ.get("DB_PORT"))
 }
 
+
 def get_db_connection(cims=True):
-    """Establish a database connection."""
     if cims:
-        return mysql.connector.connect(**db_config_cism)
+        db_url = os.getenv("DATABASE_URL")  # This will be set in Render
+        if not db_url:
+            raise Exception("DATABASE_URL not found in environment variables")
+
+        result = urlparse(db_url)
+
+        return mysql.connector.connect(
+            host=result.hostname,
+            port=result.port,
+            user=result.username,
+            password=result.password,
+            database=result.path[1:]  # Skip leading slash in '/dbname'
+        )
     else:
-        return mysql.connector.connect(**db_config_proj)
+        # (Optional) If you still use your local or second project DB
+        return mysql.connector.connect(
+            host="10.0.116.125",
+            user="cs432g16",
+            password="LbNXp7Tz",
+            database="cs432g16"
+        )
+
 
 @app.route('/show_scholarship', methods=['GET'])
 def show_scholarship():
